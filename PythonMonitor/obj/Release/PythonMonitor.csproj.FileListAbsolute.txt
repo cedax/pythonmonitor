@@ -1,0 +1,10 @@
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\bin\Release\PythonMonitor.exe.config
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\bin\Release\PythonMonitor.exe
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\bin\Release\PythonMonitor.pdb
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.csproj.AssemblyReference.cache
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.Form1.resources
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.Properties.Resources.resources
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.csproj.GenerateResource.cache
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.csproj.CoreCompileInputs.cache
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.exe
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Release\PythonMonitor.pdb
