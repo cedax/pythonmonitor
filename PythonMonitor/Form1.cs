@@ -136,7 +136,7 @@ namespace PythonMonitor
 
                 // Obtener el ID del hilo actual
                 int threadId = Thread.CurrentThread.ManagedThreadId;
-                pythonLocations[index].LastPIDThread = threadId;
+                //pythonLocations[index].LastPIDThread = threadId;
 
                 // Verificar si el archivo de log no existe
                 if (!File.Exists(logFileName))
@@ -218,8 +218,13 @@ namespace PythonMonitor
 
                             // Configurar el destinatario y el asunto del correo
                             string toEmail = "lopez17081@gmail.com";
-                            string subject = "¡Hola desde C#!";
-                            string body = "Este es un correo electrónico enviado desde una aplicación C#.";
+                            string subject = "Python Monitor Notification";
+                            // Sedax
+
+                            string body = $"El python {scriptName} ubicado en {scriptPath} fallo a las {currentTimestamp}";
+
+                            // adjuntar el archivo de la unicacion pythonLocations[index].LastLog
+                            string attachmentFilePath = pythonLocations[index].LastLog;
 
                             // Configurar el cliente SMTP de Gmail
                             SmtpClient smtpClient = new SmtpClient("smtp.gmail.com")
@@ -231,6 +236,10 @@ namespace PythonMonitor
 
                             // Crear el correo electrónico
                             MailMessage mailMessage = new MailMessage(fromEmail, toEmail, subject, body);
+
+                            // Adjuntar el archivo al correo electrónico
+                            Attachment attachment = new Attachment(attachmentFilePath);
+                            mailMessage.Attachments.Add(attachment);
 
                             try
                             {
@@ -273,7 +282,7 @@ namespace PythonMonitor
                     {
                         // El proceso terminó con éxito
                         Console.WriteLine("El script Python ha terminado correctamente.");
-                        // Aquí puedes agregar cualquier acción adicional que necesites realizar después de que el script se ejecute correctamente
+                        // ToDo: Hacer que el hilo se vuelva a ejecutar para tener un loop infinito mientras este activa su ejecucion
                     }
                 }
             }
@@ -536,7 +545,7 @@ namespace PythonMonitor
         public string Path { get; set; }
         public bool Checked { get; set; }
         public string LastLog { get; set; }
-        public int LastPIDThread { get; set; }
+        //public int LastPIDThread { get; set; }
         public string LastEmailNotify { get; set; }
     }
 }
