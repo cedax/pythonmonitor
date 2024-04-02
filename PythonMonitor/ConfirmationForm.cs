@@ -12,9 +12,11 @@ namespace PythonMonitor
 {
     public partial class ConfirmationForm : Form
     {
-        public ConfirmationForm()
+        public ConfirmationForm(string actionPreset)
         {
             InitializeComponent();
+            string buttonText = char.ToUpper(actionPreset[0]) + actionPreset.Substring(1);
+            controlPython.Text = buttonText;
             this.FormBorderStyle = FormBorderStyle.FixedSingle; // Esto deshabilita la capacidad de redimensionamiento
         }
 

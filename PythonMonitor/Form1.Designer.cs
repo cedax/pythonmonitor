@@ -35,7 +35,6 @@
             this.checkedListBoxPythonLocations = new System.Windows.Forms.CheckedListBox();
             this.buttonDelete = new System.Windows.Forms.Button();
             this.textBoxLog = new System.Windows.Forms.TextBox();
-            this.buttonStopLoopPython = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // openFileDialogPython
@@ -46,7 +45,7 @@
             // 
             this.buttonAddPython.Location = new System.Drawing.Point(12, 15);
             this.buttonAddPython.Name = "buttonAddPython";
-            this.buttonAddPython.Size = new System.Drawing.Size(200, 39);
+            this.buttonAddPython.Size = new System.Drawing.Size(300, 39);
             this.buttonAddPython.TabIndex = 0;
             this.buttonAddPython.Text = "Agregar Python";
             this.buttonAddPython.UseVisualStyleBackColor = true;
@@ -69,14 +68,15 @@
             this.checkedListBoxPythonLocations.HorizontalScrollbar = true;
             this.checkedListBoxPythonLocations.Location = new System.Drawing.Point(12, 75);
             this.checkedListBoxPythonLocations.Name = "checkedListBoxPythonLocations";
+            this.checkedListBoxPythonLocations.ScrollAlwaysVisible = true;
             this.checkedListBoxPythonLocations.Size = new System.Drawing.Size(644, 310);
             this.checkedListBoxPythonLocations.TabIndex = 0;
             // 
             // buttonDelete
             // 
-            this.buttonDelete.Location = new System.Drawing.Point(235, 15);
+            this.buttonDelete.Location = new System.Drawing.Point(356, 15);
             this.buttonDelete.Name = "buttonDelete";
-            this.buttonDelete.Size = new System.Drawing.Size(200, 39);
+            this.buttonDelete.Size = new System.Drawing.Size(300, 39);
             this.buttonDelete.TabIndex = 2;
             this.buttonDelete.Text = "Eliminar Python";
             this.buttonDelete.UseVisualStyleBackColor = true;
@@ -94,21 +94,11 @@
             this.textBoxLog.Size = new System.Drawing.Size(342, 372);
             this.textBoxLog.TabIndex = 4;
             // 
-            // buttonStopLoopPython
-            // 
-            this.buttonStopLoopPython.Location = new System.Drawing.Point(456, 15);
-            this.buttonStopLoopPython.Name = "buttonStopLoopPython";
-            this.buttonStopLoopPython.Size = new System.Drawing.Size(200, 39);
-            this.buttonStopLoopPython.TabIndex = 5;
-            this.buttonStopLoopPython.Text = "Detener loop del Python";
-            this.buttonStopLoopPython.UseVisualStyleBackColor = true;
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(1028, 397);
-            this.Controls.Add(this.buttonStopLoopPython);
             this.Controls.Add(this.textBoxLog);
             this.Controls.Add(this.buttonDelete);
             this.Controls.Add(this.checkedListBoxPythonLocations);
@@ -133,7 +123,6 @@
         private System.Windows.Forms.CheckedListBox checkedListBoxPythonLocations;
         private System.Windows.Forms.Button buttonDelete;
         private System.Windows.Forms.TextBox textBoxLog;
-        private System.Windows.Forms.Button buttonStopLoopPython;
     }
 }
 

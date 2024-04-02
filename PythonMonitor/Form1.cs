@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Mail;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -131,6 +134,10 @@ namespace PythonMonitor
 
                 Console.WriteLine(logFileName);
 
+                // Obtener el ID del hilo actual
+                int threadId = Thread.CurrentThread.ManagedThreadId;
+                pythonLocations[index].LastPIDThread = threadId;
+
                 // Verificar si el archivo de log no existe
                 if (!File.Exists(logFileName))
                 {
@@ -146,8 +153,8 @@ namespace PythonMonitor
                 startInfo.UseShellExecute = false;
 
                 // Ocultar la ventana del proceso secundario
-                //startInfo.CreateNoWindow = true;
-                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.CreateNoWindow = true;
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
                 // Iniciar el proceso
                 using (Process process = new Process())
@@ -168,6 +175,99 @@ namespace PythonMonitor
                         // El proceso terminó con un código de error
                         Console.WriteLine("El script Python ha terminado con un código de error: " + process.ExitCode);
                         // Aquí puedes agregar cualquier acción de limpieza necesaria o notificación de error
+
+                        // ToDo: Enviar email para informar de error
+                        // Obtener el timestamp actual en formato de cadena de texto
+                        string lastEmailNotify = pythonLocations[index].LastEmailNotify;
+
+                        if(lastEmailNotify == null)
+                        {
+                            // Obtener la fecha y hora actual
+                            DateTime now = DateTime.Now;
+
+                            // Restar 5 minutos a la fecha y hora actual
+                            DateTime fiveMinutesAgo = now.AddMinutes(-59);
+
+                            // Convertir la fecha y hora resultante a formato de cadena
+                            lastEmailNotify = fiveMinutesAgo.ToString("yyyy-MM-dd HH:mm:ss");
+                        }
+
+                        // Obtener el timestamp actual
+                        string currentTimestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                        // Convertir lastEmailNotify a DateTime
+                        DateTime lastEmailNotifyDateTime = DateTime.ParseExact(lastEmailNotify, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+                        // Convertir currentTimestamp a DateTime
+                        DateTime currentDateTime = DateTime.ParseExact(currentTimestamp, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+                        // Calcular la diferencia entre los dos timestamps
+                        TimeSpan difference = currentDateTime - lastEmailNotifyDateTime;
+
+                        // Verificar si la diferencia es mayor a 5 minutos
+                        if (difference.TotalMinutes > 5)
+                        {
+                            // Configurar las credenciales de Gmail
+                            string fromEmail = "sedax.contact@gmail.com";
+                            string password = "jqkoczsovdxvikqg"; // Asegúrate de usar una cuenta con autenticación de dos factores y una contraseña de aplicación para mayor seguridad
+                            
+                            
+                            //USER_GMAIL = sedax.contact@gmail.com
+                            //PASS_GMAIL = jqkoczsovdxvikqg
+
+
+                            // Configurar el destinatario y el asunto del correo
+                            string toEmail = "lopez17081@gmail.com";
+                            string subject = "¡Hola desde C#!";
+                            string body = "Este es un correo electrónico enviado desde una aplicación C#.";
+
+                            // Configurar el cliente SMTP de Gmail
+                            SmtpClient smtpClient = new SmtpClient("smtp.gmail.com")
+                            {
+                                Port = 587,
+                                Credentials = new NetworkCredential(fromEmail, password),
+                                EnableSsl = true,
+                            };
+
+                            // Crear el correo electrónico
+                            MailMessage mailMessage = new MailMessage(fromEmail, toEmail, subject, body);
+
+                            try
+                            {
+                                // Enviar el correo electrónico
+                                smtpClient.Send(mailMessage);
+                                Console.WriteLine("Correo electrónico enviado exitosamente.");
+                                lastEmailNotify = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                                pythonLocations[index].LastEmailNotify = lastEmailNotify;
+                                // Guardar los cambios en el archivo JSON
+                                SavePythonLocations();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error al enviar el correo electrónico: {ex.Message}");
+                            }
+                        }
+
+                        // Obtener el camino (path) del elemento chequeado
+                        string filePath = pythonLocations[index].Path;
+
+                        // Verificar si el archivo existe y es un archivo Python (.py)
+                        if (File.Exists(filePath) && Path.GetExtension(filePath).Equals(".py", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Ejecutar el archivo Python en un hilo aparte
+                            if (pythonLocations[index].Checked == true)
+                            {
+                                // ToDo: Agregar el ID de Thread al JSON para despues poder matar el hilo
+                                // Esto se ejecuta cuando es la primer ejecucion, para los archivos que estan marcados como TRUE
+                                Thread pythonThread = new Thread(() => ExecutePythonScript(filePath, index));
+                                pythonThread.Start();
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show($"El archivo no existe o no es un archivo Python ({filePath}).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+
                     }
                     else
                     {
@@ -240,7 +340,7 @@ namespace PythonMonitor
             else
             {
                 // Crear y mostrar el formulario de confirmación personalizado
-                using (ConfirmationForm confirmationForm = new ConfirmationForm())
+                using (ConfirmationForm confirmationForm = new ConfirmationForm(actionPreset))
                 {
                     DialogResult resultTwo = confirmationForm.ShowDialog();
 
@@ -296,15 +396,47 @@ namespace PythonMonitor
                         try
                         {
                             string pathLog = pythonLocations[e.Index].LastLog;
-
+                            
                             // Verificar si el archivo de log existe
                             if (File.Exists(pathLog))
                             {
                                 // Leer el contenido del archivo de log
-                                string logContent = File.ReadAllText(pathLog);
+                                string originalLogPath = pythonLocations[e.Index].LastLog;
+                                string tempLogPath = Path.GetTempFileName(); // Obtener una ruta temporal única
 
-                                // Mostrar el contenido en el TextBoxLog
-                                textBoxLog.Text = logContent;
+                                try
+                                {
+                                    // Copiar el archivo de log a la ruta temporal
+                                    File.Copy(originalLogPath, tempLogPath, true);
+
+                                    // Verificar si la copia temporal del archivo de log existe
+                                    if (File.Exists(tempLogPath))
+                                    {
+                                        // Leer el contenido de la copia temporal del archivo de log
+                                        string logContent = File.ReadAllText(tempLogPath);
+
+                                        // Mostrar el contenido en el TextBoxLog
+                                        textBoxLog.Text = logContent;
+                                    }
+                                    else
+                                    {
+                                        // La copia temporal del archivo de log no existe
+                                        textBoxLog.Text = "El archivo de log no pudo ser copiado.";
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Manejar cualquier excepción que pueda ocurrir al copiar o leer el archivo de log
+                                    textBoxLog.Text = "Error al leer el archivo de log: " + ex.Message;
+                                }
+                                finally
+                                {
+                                    // Eliminar la copia temporal del archivo de log
+                                    if (File.Exists(tempLogPath))
+                                    {
+                                        File.Delete(tempLogPath);
+                                    }
+                                }
                             }
                             else
                             {
@@ -340,15 +472,24 @@ namespace PythonMonitor
                 // Obtener el índice del elemento seleccionado
                 int selectedIndex = checkedListBoxPythonLocations.SelectedIndex;
 
-                // Eliminar el elemento del CheckedListBox
-                checkedListBoxPythonLocations.Items.RemoveAt(selectedIndex);
+                // Verificar si el Python está desactivado
+                if (!pythonLocations[selectedIndex].Checked)
+                {
+                    // Eliminar el elemento del CheckedListBox
+                    checkedListBoxPythonLocations.Items.RemoveAt(selectedIndex);
 
-                // Eliminar el elemento de la lista pythonLocations
-                pythonLocations.RemoveAt(selectedIndex);
+                    // Eliminar el elemento de la lista pythonLocations
+                    pythonLocations.RemoveAt(selectedIndex);
 
-                // Guardar los cambios en el archivo JSON
-                SavePythonLocations();
-            }else
+                    // Guardar los cambios en el archivo JSON
+                    SavePythonLocations();
+                }
+                else
+                {
+                    ShowErrorMessage("El Python debe estar desactivado para poder eliminarlo.");
+                }
+            }
+            else
             {
                 ShowErrorMessage("Por favor, seleccione el Python a eliminar.");
             }
@@ -395,5 +536,7 @@ namespace PythonMonitor
         public string Path { get; set; }
         public bool Checked { get; set; }
         public string LastLog { get; set; }
+        public int LastPIDThread { get; set; }
+        public string LastEmailNotify { get; set; }
     }
 }
