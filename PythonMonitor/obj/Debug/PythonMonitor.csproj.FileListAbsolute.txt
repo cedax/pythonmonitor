@@ -123,3 +123,4 @@ C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\bin\Debug\System.Threading.
 C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Debug\PythonMonitor.csproj.SuggestedBindingRedirects.cache
 C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Debug\PythonMonitor.exe.config
 C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Debug\PythonMo.0FAD2171.Up2Date
+C:\Users\chlopez\Desktop\PythonMonitor\PythonMonitor\obj\Debug\PythonMonitor.ConfirmationForm.resources

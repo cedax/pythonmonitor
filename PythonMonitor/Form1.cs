@@ -116,7 +116,7 @@ namespace PythonMonitor
             }
         }
 
-        private void ExecutePythonScript(string scriptPath)
+        private void ExecutePythonScript(string scriptPath, int index)
         {
             try
             {
@@ -154,6 +154,10 @@ namespace PythonMonitor
                 {
                     process.StartInfo = startInfo;
                     process.Start();
+
+                    pythonLocations[index].LastLog = logFileName;
+                    // Guardar los cambios en el archivo JSON
+                    SavePythonLocations();
 
                     // Esperar a que el proceso termine
                     process.WaitForExit();
@@ -217,13 +221,15 @@ namespace PythonMonitor
                     // Ejecutar el archivo Python en un hilo aparte
                     if (e.NewValue == CheckState.Checked)
                     {
-                        Thread pythonThread = new Thread(() => ExecutePythonScript(filePath));
+                        // ToDo: Agregar el ID de Thread al JSON para despues poder matar el hilo
+                        // Esto se ejecuta cuando es la primer ejecucion, para los archivos que estan marcados como TRUE
+                        Thread pythonThread = new Thread(() => ExecutePythonScript(filePath, e.Index));
                         pythonThread.Start();
                     }
                 }
                 else
                 {
-                    MessageBox.Show("El archivo no existe o no es un archivo Python (.py).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"El archivo no existe o no es un archivo Python ({filePath}).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     // Cancelar el cambio de estado del elemento chequeado
                     e.NewValue = CheckState.Unchecked;
                     pythonLocations[e.Index].Checked = false;
@@ -233,43 +239,90 @@ namespace PythonMonitor
             }
             else
             {
-                DialogResult result = MessageBox.Show($"¿Estás seguro de {actionPreset} el python seleccionado ({selectedPath})?", "Confirmación", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-                // Verificar la respuesta del usuario
-                if (result == DialogResult.Yes)
+                // Crear y mostrar el formulario de confirmación personalizado
+                using (ConfirmationForm confirmationForm = new ConfirmationForm())
                 {
-                    // Obtener el camino (path) del elemento chequeado
-                    string filePath = pythonLocations[e.Index].Path;
+                    DialogResult resultTwo = confirmationForm.ShowDialog();
 
-                    // Verificar si el archivo existe y es un archivo Python (.py)
-                    if (File.Exists(filePath) && Path.GetExtension(filePath).Equals(".py", StringComparison.OrdinalIgnoreCase))
+                    // Verificar la opción seleccionada por el usuario
+                    if (resultTwo == DialogResult.Yes)
                     {
-                        // Actualizar el estado de marcado en la lista pythonLocations
-                        pythonLocations[e.Index].Checked = (e.NewValue == CheckState.Checked);
+                        DialogResult result = MessageBox.Show($"¿Estás seguro de {actionPreset} el python seleccionado ({selectedPath})?", "Confirmación", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
-                        // Guardar los cambios en el archivo JSON
-                        SavePythonLocations();
-
-                        // Ejecutar el archivo Python en un hilo aparte
-                        if (e.NewValue == CheckState.Checked)
+                        // Verificar la respuesta del usuario
+                        if (result == DialogResult.Yes)
                         {
-                            Thread pythonThread = new Thread(() => ExecutePythonScript(filePath));
-                            pythonThread.Start();
+                            // Obtener el camino (path) del elemento chequeado
+                            string filePath = pythonLocations[e.Index].Path;
+
+                            // Verificar si el archivo existe y es un archivo Python (.py)
+                            if (File.Exists(filePath) && Path.GetExtension(filePath).Equals(".py", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Actualizar el estado de marcado en la lista pythonLocations
+                                pythonLocations[e.Index].Checked = (e.NewValue == CheckState.Checked);
+
+                                // Guardar los cambios en el archivo JSON
+                                SavePythonLocations();
+
+                                // Ejecutar el archivo Python en un hilo aparte
+                                if (e.NewValue == CheckState.Checked)
+                                {
+                                    // ToDo: Agregar el ID de Thread al JSON para despues poder matar el hilo
+                                    // Esto se ejecuta cuando es la primer ejecucion, para los archivos que estan marcados como TRUE
+                                    Thread pythonThread = new Thread(() => ExecutePythonScript(filePath, e.Index));
+                                    pythonThread.Start();
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("El archivo no existe o no es un archivo Python (.py).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                // Cancelar el cambio de estado del elemento chequeado
+                                e.NewValue = CheckState.Unchecked;
+                                pythonLocations[e.Index].Checked = false;
+                                // Guardar los cambios en el archivo JSON
+                                SavePythonLocations();
+                            }
                         }
+                        else
+                        {
+                            e.NewValue = e.CurrentValue;
+                        }
+                    }
+                    else if (resultTwo == DialogResult.No)
+                    {
+                        // Log de python
+                        e.NewValue = e.CurrentValue;
+
+                        try
+                        {
+                            string pathLog = pythonLocations[e.Index].LastLog;
+
+                            // Verificar si el archivo de log existe
+                            if (File.Exists(pathLog))
+                            {
+                                // Leer el contenido del archivo de log
+                                string logContent = File.ReadAllText(pathLog);
+
+                                // Mostrar el contenido en el TextBoxLog
+                                textBoxLog.Text = logContent;
+                            }
+                            else
+                            {
+                                // El archivo de log no existe
+                                textBoxLog.Text = "El archivo de log no existe.";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Manejar cualquier excepción que pueda ocurrir al abrir o leer el archivo de log
+                            textBoxLog.Text = $"Error al abrir el archivo de log: {ex.Message}";
+                        }
+
                     }
                     else
                     {
-                        MessageBox.Show("El archivo no existe o no es un archivo Python (.py).", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        // Cancelar el cambio de estado del elemento chequeado
-                        e.NewValue = CheckState.Unchecked;
-                        pythonLocations[e.Index].Checked = false;
-                        // Guardar los cambios en el archivo JSON
-                        SavePythonLocations();
+                        e.NewValue = e.CurrentValue;
                     }
-                }
-                else
-                {
-                    e.NewValue = e.CurrentValue;
                 }
             }
         }
@@ -341,5 +394,6 @@ namespace PythonMonitor
         public int Id { get; set; }
         public string Path { get; set; }
         public bool Checked { get; set; }
+        public string LastLog { get; set; }
     }
 }
